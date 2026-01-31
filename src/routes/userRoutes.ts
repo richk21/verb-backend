@@ -1,5 +1,6 @@
 import { Router } from "express";
-import { createUser, loginUser } from "../controllers/UserController";
+import { createUser, getUserProfile, loginUser, updateUserInfo } from "../controllers/UserController";
+import {upload} from "../config/multer";
 
 const router = Router();
 
@@ -52,5 +53,14 @@ router.post("/signup", createUser);
  *         description: User Logged in successfully
  */
 router.post("/login", loginUser);
+
+router.post("/updateInfo", 
+    upload.fields([
+        { name: 'userCoverImage', maxCount: 1 },
+        { name: 'userProfileImage', maxCount: 1 }
+    ]), 
+    updateUserInfo);
+
+router.get("/getProfile/:id", getUserProfile);
 
 export default router;
