@@ -10,7 +10,7 @@ const options: swaggerJSDoc.Options = {
     },
     servers: [
       {
-        url: `http://localhost:5000`,
+        url: process.env.RENDER_EXTERNAL_URL,
       },
     ],
   },
