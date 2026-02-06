@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import User from '../models/User';
+import { verifyGoogleToken } from '../utils/googleAuth';
+import jwt from 'jsonwebtoken';
 
 export const createUser = async (req: Request, res: Response) => {
   try {
@@ -33,6 +35,12 @@ export const loginUser = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid email or password' });
     }
 
+     if (!user.userPassword) {
+      return res.status(400).json({
+        message: 'Please login with Google for password-less experience',
+      });
+    }
+
     const isMatch = await user.comparePassword(userPassword);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid email or password' });
@@ -52,15 +60,93 @@ export const loginUser = async (req: Request, res: Response) => {
   }
 };
 
+export const googleLogin = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body;
+    const payload = await verifyGoogleToken(token);
+    if (!payload) {
+      return res.status(401).json({ message: 'Invalid Google token' });
+    }
+
+    const { email, name, picture, sub } = payload;
+
+    let user = await User.findOne({ userEmail: email }); // if user already exists
+
+    if (!user) { //first time google login: create user
+      user = await User.create({
+        userEmail: email,
+        userName: name,
+        googleId: sub,
+        userProfileImage: picture,
+        userPassword: null
+      });
+    }
+
+   const jwtToken = user.generateAuthToken();
+
+    res.json({
+      token: jwtToken,
+      user: {
+        id: user.id,
+        name: user.userName,
+        email: user.userEmail,
+        bio: user.userBio,
+        profileImage: user.userProfileImage,
+        coverImage: user.userCoverImage,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(401).json({ message: 'Google authentication failed' });
+  }
+};
+
+export const googleSignup = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.body;
+    const payload = await verifyGoogleToken(token);
+    if (!payload) {
+      return res.status(401).json({ message: 'Invalid Google token' });
+    }
+
+    const { email, name, picture, sub } = payload;
+
+    let user = await User.findOne({ userEmail: email });
+
+    if (!user) {
+      user = await User.create({
+        userEmail: email,
+        userName: name,
+        googleId: sub,
+        userProfileImage: picture,
+        userPassword: null
+      });
+    }
+
+    const jwtToken = jwt.sign(
+      { id: user.id, email: user.userEmail },
+      process.env.JWT_SECRET!,
+      { expiresIn: '7d' }
+    );
+
+    res.json({ token: jwtToken, user });
+  } catch (err) {
+    console.error(err);
+    res.status(401).json({ message: 'Google authentication failed' });
+  }
+};
+
 export const updateUserInfo = async (req: Request, res: Response) => {
   try {
-    const { userId, userName, userBio  } = req.body;
+    const authUserId = req.user?.id;
+    if (!authUserId) return res.status(401).json({ message: 'Unauthorized' });
 
+    const { userName, userBio  } = req.body;
     const files = req.files as { [field: string]: Express.Multer.File[] };
     const profileFile = files?.["userProfileImage"]?.[0];
     const coverFile = files?.["userCoverImage"]?.[0];
 
-    const user = await User.findById(userId);
+    const user = await User.findById(authUserId);
     if (!user) {
       return res.status(400).json({ message: 'Invalid user' });
     }

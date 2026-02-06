@@ -5,6 +5,7 @@ import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from './config/swagger';
 import userRoutes from './routes/userRoutes';
 import blogRoutes from './routes/blogRoutes';
+import unsplashRoutes from './routes/unsplashRoutes';
 import cors from 'cors';
 
 dotenv.config();
@@ -21,7 +22,7 @@ app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/api/users", userRoutes);
 app.use("/api/blogs", blogRoutes);
-
+app.use("/api/unsplash", unsplashRoutes);
 
 const PORT = process.env.PORT;
 

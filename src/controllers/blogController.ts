@@ -5,17 +5,23 @@ import { IBlogFilters } from '../interfaces/blogFilters';
 
 export const createBlog = async (req: Request, res: Response) => {
   try {
-    const { id, _id, title, content, authorId, hashtags, coverImage, authorAvatar, createdAt, isDraft } = req.body;
+    const { id, _id, title, content, hashtags, coverImage, createdAt, isDraft } = req.body;
     const blogId = id || _id;
     if(blogId){
       updateBlog(req, res);
       return;
     }
 
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const author = await User.findById(userId);
+    const authorAvatar = author?.userProfileImage || '';
+
     const newBlog = new Blog({
       title,
       content,
-      authorId,
+      authorId: userId,
       hashtags,
       coverImage,
       authorAvatar,
@@ -32,14 +38,24 @@ export const createBlog = async (req: Request, res: Response) => {
 };
 
 export const updateBlog = async (req: Request, res: Response) => {
-  const blogId = req.body.id;
-  const updateData = req.body;
-
   try {
-    const updatedBlog = await Blog.findByIdAndUpdate(blogId, updateData, { new: true });
-    if (!updatedBlog) {
-      return res.status(404).json({ message: 'Blog not found' });
+    const blogId = req.body.id;
+    if (!blogId) return res.status(400).json({ message: 'Missing blog id' });
+
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const blog = await Blog.findById(blogId);
+    if (!blog) return res.status(404).json({ message: 'Blog not found' });
+
+    if (blog.authorId?.toString() !== userId) {
+      return res.status(403).json({ message: 'Not authorized to edit this blog' });
     }
+
+    const disallowed = ['authorId', 'authorAvatar', 'createdAt', '_id', 'id'];
+    disallowed.forEach((k) => delete req.body[k]);
+
+    const updatedBlog = await Blog.findByIdAndUpdate(blogId, req.body, { new: true });
     res.json(updatedBlog);
   } catch (error) {
     console.error('Error updating blog:', error);
@@ -128,11 +144,21 @@ export const getById = async (req: Request, res: Response) => {
 }
 
 export const deleteBlog = async (req: Request, res: Response) => {
-  try{
-    const blog = await Blog.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Blog deleted successfully', blog });
-  }catch(err){
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const blog = await Blog.findById(req.params.id);
+    if (!blog) return res.status(404).json({ message: 'Blog not found' });
+
+    if (blog.authorId?.toString() !== userId) {
+      return res.status(403).json({ message: 'Not authorized to delete this blog' });
+    }
+
+    await Blog.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Blog deleted successfully' });
+  } catch (err) {
     console.error('Error deleting blog:', err);
     res.status(500).json({ error: 'Failed to delete blog' });
   }
-}
+};

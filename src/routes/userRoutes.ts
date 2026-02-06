@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { createUser, getUserProfile, loginUser, updateUserInfo } from "../controllers/UserController";
+import { createUser, getUserProfile, googleLogin, googleSignup, loginUser, updateUserInfo } from "../controllers/UserController";
 import {upload} from "../config/multer";
+import { authMiddleware } from "../middleware/auth";
 
 const router = Router();
 
@@ -54,7 +55,7 @@ router.post("/signup", createUser);
  */
 router.post("/login", loginUser);
 
-router.post("/updateInfo", 
+router.post("/updateInfo",  authMiddleware,
     upload.fields([
         { name: 'userCoverImage', maxCount: 1 },
         { name: 'userProfileImage', maxCount: 1 }
@@ -62,5 +63,9 @@ router.post("/updateInfo",
     updateUserInfo);
 
 router.get("/getProfile/:id", getUserProfile);
+
+router.post('/google-login', googleLogin);
+router.post('/google-signup', googleSignup);
+
 
 export default router;

@@ -8,15 +8,15 @@ It’s built to feel like a minimal, distraction-free writing space with a clean
 
 ## Features
 
-* 🔐 User authentication
-* ✍️ Create, edit, and delete blogs
-* 💾 Save blogs as drafts
-* 🌍 Publish blogs for others to read
-* 🖼️ Cover image selection (Unsplash integration)
-* 🏷️ Hashtag support
-* 👤 Author profiles with avatar
-* 👀 Blog preview before publishing
-* 📱 Responsive UI
+- 🔐 User authentication
+- ✍️ Create, edit, and delete blogs
+- 💾 Save blogs as drafts
+- 🌍 Publish blogs for others to read
+- 🖼️ Cover image selection (Unsplash integration)
+- 🏷️ Hashtag support
+- 👤 Author profiles with avatar
+- 👀 Blog preview before publishing
+- 📱 Responsive UI
 
 ---
 
@@ -24,11 +24,11 @@ It’s built to feel like a minimal, distraction-free writing space with a clean
 
 ### Backend
 
-* **Node.js**
-* **Express**
-* **MongoDB**
-* **JWT Authentication**
-* **Swagger API Docs**
+- **Node.js**
+- **Express**
+- **MongoDB**
+- **JWT Authentication**
+- **Swagger API Docs**
 
 ---
 
@@ -63,6 +63,7 @@ JWT_SECRET = your_jwt_token
 CLOUDINARY_CLOUD_NAME = your_cloud_name
 CLOUDINARY_API_KEY = your_cloud_api_key
 CLOUDINARY_API_SECRET = your_api_secret
+UNSPLASH_ACCESS_KEY = your_unsplash_api_key
 ```
 
 ---
@@ -79,12 +80,12 @@ CLOUDINARY_API_SECRET = your_api_secret
 
 ## 🎯 Upcoming Features
 
-* Comments system
-* Likes / claps
-* Rich text editor
-* Blog search & filters
-* Single Sign On Integrations
-Stay tuned!
+- Comments system
+- Likes / claps
+- Rich text editor
+- Blog search & filters
+- Single Sign On Integrations
+  Stay tuned!
 
 ---
 
