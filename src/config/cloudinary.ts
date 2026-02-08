@@ -1,5 +1,5 @@
-import { v2 as cloudinary } from 'cloudinary';
-import '../loadEnv';
+import { v2 as cloudinary } from "cloudinary";
+import "../loadEnv";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,

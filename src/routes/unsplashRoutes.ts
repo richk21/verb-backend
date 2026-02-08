@@ -3,5 +3,5 @@ import { getUnsplashImages } from "../controllers/UnsplashController";
 
 const router = Router();
 
-router.get('/getCoverImages', getUnsplashImages);
+router.get("/getCoverImages", getUnsplashImages);
 export default router;

@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const BlogSchema = new mongoose.Schema({
   title: String,
@@ -9,13 +9,13 @@ const BlogSchema = new mongoose.Schema({
   authorName: String,
   authorAvatar: String,
   createdAt: String,
-  isDraft: Boolean
+  isDraft: Boolean,
 });
 
-BlogSchema.virtual('id').get(function () {
+BlogSchema.virtual("id").get(function () {
   return this._id?.toString();
 });
-BlogSchema.set('toJSON', { virtuals: true });
-BlogSchema.set('toObject', { virtuals: true });
+BlogSchema.set("toJSON", { virtuals: true });
+BlogSchema.set("toObject", { virtuals: true });
 
-export default mongoose.model('Blog', BlogSchema);
+export default mongoose.model("Blog", BlogSchema);

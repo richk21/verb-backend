@@ -1,4 +1,4 @@
-export interface IBlogFilters{
-    authorId?: string | null;
-    isDraft?: boolean | null;
+export interface IBlogFilters {
+  authorId?: string | null;
+  isDraft?: boolean | null;
 }

@@ -7,7 +7,7 @@ export const getUnsplashImages = async (req: Request, res: Response) => {
     console.log("Received queryString:", queryStrings);
 
     const response = await axios.get("https://api.unsplash.com/photos/random", {
-      params: { count, query: queryStrings?.toString().split(' ') || [] },
+      params: { count, query: queryStrings?.toString().split(" ") || [] },
       headers: {
         Authorization: `Client-ID ${process.env.UNSPLASH_ACCESS_KEY}`,
       },
@@ -21,7 +21,7 @@ export const getUnsplashImages = async (req: Request, res: Response) => {
       author: img.user.name,
     }));
 
-    res.json({images: images});
+    res.json({ images: images });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Failed to fetch images" });
