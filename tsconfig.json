@@ -9,7 +9,8 @@
     "moduleResolution": "node",
     "strict": true,
     "types":["node"],
-    "typeRoots": ["./src/types", "./node_modules/@types"]
+    "typeRoots": ["./src/types", "./node_modules/@types"],
+    "skipLibCheck": true
   },
   "include": ["src"],
 }
