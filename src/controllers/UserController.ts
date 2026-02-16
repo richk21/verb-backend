@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import crypto from "crypto";
 import User from "../models/User";
 import { verifyGoogleToken } from "../utils/googleAuth";
 import { Resend } from "resend";
@@ -13,26 +14,36 @@ export const createUser = async (req: Request, res: Response) => {
       return res.status(400).json({ message: "Email already in use" });
     }
 
-    const newUser = new User({ userName, userEmail, userPassword });
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(verificationToken)
+      .digest("hex");
+
+    const newUser = new User({
+      userName,
+      userEmail,
+      userPassword,
+      emailVerificationToken: hashedToken,
+      emailVerificationExpires: Date.now() + 1000 * 60 * 60,
+    });
+
     await newUser.save();
 
-    const token = newUser.generateAuthToken();
-    res.status(201).json({
-      message: "User created successfully",
-      user: {
-        id: newUser.id,
-        email: newUser.userEmail,
-        name: newUser.userName,
-      },
-      token,
-    });
+    const verificationUrl = `${process.env.FRONTEND_URL}/users/verify-email/${verificationToken}`;
     const resend = new Resend(process.env.RESEND_API_KEY);
-    await resend.emails.send({
-      from: "Verb <onboarding@resend.dev>",
+    const result = await resend.emails.send({
+      from: "Verb <no-reply@send.verbblog.com>",
       to: newUser.userEmail,
-      subject:
-        "Welcome to Verb - where ideas compile into verbs and come to life",
-      html: signUpMailTemplate(newUser.userName),
+      subject: "Verify your email for Verb",
+      html: `
+        <h2>Welcome to Verb</h2>
+        <p>Please verify your email:</p>
+        <a href="${verificationUrl}">Verify Email</a>
+      `,
+    });
+    res.status(201).json({
+      message: "Account created. Please verify your email before logging in.",
     });
   } catch (error) {
     res.status(500).json({ message: "Something went wrong" });
@@ -47,7 +58,11 @@ export const loginUser = async (req: Request, res: Response) => {
     if (!user) {
       return res.status(400).json({ message: "Invalid email or password" });
     }
-
+    if (!user.isVerified) {
+      return res.status(403).json({
+        message: "Please verify your email before logging in",
+      });
+    }
     if (!user.userPassword) {
       return res.status(400).json({
         message: "Please login with Google for password-less experience",
@@ -97,11 +112,12 @@ export const googleAuth = async (req: Request, res: Response) => {
         googleId: sub,
         userProfileImage: picture,
         userPassword: null,
+        isVerified: true,
       });
 
       const resend = new Resend(process.env.RESEND_API_KEY);
-      await resend.emails.send({
-        from: "Verb <onboarding@resend.dev>",
+      const result = await resend.emails.send({
+        from: "Verb <no-reply@send.verbblog.com>",
         to: user.userEmail,
         subject:
           "Welcome to Verb - where ideas compile into verbs and come to life",

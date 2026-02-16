@@ -10,6 +10,9 @@ export interface IUser extends Document {
   userProfileImage?: string;
   userCoverImage?: string;
   userBio?: string;
+  isVerified: boolean;
+  emailVerificationToken?: string;
+  emailVerificationExpires?: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
   generateAuthToken(): string;
 }
@@ -22,6 +25,9 @@ const userSchema = new Schema<IUser>({
   userBio: { type: String, required: false },
   userCoverImage: { type: String, required: false },
   userProfileImage: { type: String, required: false },
+  isVerified: { type: Boolean, default: false },
+  emailVerificationToken: { type: String },
+  emailVerificationExpires: { type: Date },
 });
 
 userSchema.pre("save", async function (next) {

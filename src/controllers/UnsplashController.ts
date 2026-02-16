@@ -4,7 +4,6 @@ import { Request, Response } from "express";
 export const getUnsplashImages = async (req: Request, res: Response) => {
   try {
     const { count = 6, queryStrings } = req.query;
-    console.log("Received queryString:", queryStrings);
     const rawQuery = queryStrings?.toString() || "";
 
     const cleanedQuery = rawQuery
