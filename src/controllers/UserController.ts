@@ -1,29 +1,55 @@
-import { Request, Response } from "express";
-import crypto from "crypto";
-import User from "../models/User";
-import { verifyGoogleToken } from "../utils/googleAuth";
-import { Resend } from "resend";
-import { signUpMailTemplate } from "../utils/signUpMailTemplate";
+import crypto from 'crypto';
+import { Request, Response } from 'express';
+import { Resend } from 'resend';
+import Organization from '../models/Organization';
+import User from '../models/User';
+import { verifyGoogleToken } from '../utils/googleAuth';
+import { signUpMailTemplate } from '../utils/signUpMailTemplate';
+
+const slugify = (name: string) =>
+  name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+
+const findOrCreateOrganization = async (organizationName: string) => {
+  const slug = slugify(organizationName);
+  let org = await Organization.findOne({ slug });
+  let wasCreated = false;
+
+  if (!org) {
+    org = await Organization.create({ name: organizationName.trim(), slug });
+    wasCreated = true;
+  }
+
+  return { org, wasCreated };
+};
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { userName, userEmail, userPassword } = req.body;
+    const { userName, userEmail, userPassword, organizationName } = req.body;
+
+    if (!organizationName || !organizationName.trim()) {
+      return res.status(400).json({ message: 'Organization name is required' });
+    }
 
     const existingUser = await User.findOne({ userEmail });
     if (existingUser) {
-      return res.status(400).json({ message: "Email already in use" });
+      return res.status(400).json({ message: 'Email already in use' });
     }
 
-    const verificationToken = crypto.randomBytes(32).toString("hex");
-    const hashedToken = crypto
-      .createHash("sha256")
-      .update(verificationToken)
-      .digest("hex");
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const hashedToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+
+    const { org, wasCreated } = await findOrCreateOrganization(organizationName);
 
     const newUser = new User({
       userName,
       userEmail,
       userPassword,
+      orgId: org._id,
+      role: wasCreated ? 'admin' : 'contributor',
       emailVerificationToken: hashedToken,
       emailVerificationExpires: Date.now() + 1000 * 60 * 60,
     });
@@ -32,21 +58,24 @@ export const createUser = async (req: Request, res: Response) => {
 
     const verificationUrl = `${process.env.FRONTEND_URL}/users/verify-email/${verificationToken}`;
     const resend = new Resend(process.env.RESEND_API_KEY);
-    const result = await resend.emails.send({
-      from: "Verb <no-reply@send.verbblog.com>",
+
+    //send email notification
+    await resend.emails.send({
+      from: 'Verb <no-reply@send.verbblog.com>',
       to: newUser.userEmail,
-      subject: "Verify your email for Verb",
+      subject: 'Verify your email for Verb',
       html: `
         <h2>Welcome to Verb</h2>
         <p>Please verify your email:</p>
         <a href="${verificationUrl}">Verify Email</a>
       `,
     });
+
     res.status(201).json({
-      message: "Account created. Please verify your email before logging in.",
+      message: 'Account created. Please verify your email before logging in.',
     });
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong" });
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
@@ -56,27 +85,27 @@ export const loginUser = async (req: Request, res: Response) => {
 
     const user = await User.findOne({ userEmail });
     if (!user) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res.status(400).json({ message: 'Invalid email or password' });
     }
     if (!user.isVerified) {
       return res.status(403).json({
-        message: "Please verify your email before logging in",
+        message: 'Please verify your email before logging in',
       });
     }
     if (!user.userPassword) {
       return res.status(400).json({
-        message: "Please login with Google for password-less experience",
+        message: 'Please login with Google for password-less experience',
       });
     }
 
     const isMatch = await user.comparePassword(userPassword);
     if (!isMatch) {
-      return res.status(400).json({ message: "Invalid email or password" });
+      return res.status(400).json({ message: 'Invalid email or password' });
     }
 
     const token = user.generateAuthToken();
     res.status(200).json({
-      message: "Login successful",
+      message: 'Login successful',
       user: {
         id: user.id,
         email: user.userEmail,
@@ -84,20 +113,21 @@ export const loginUser = async (req: Request, res: Response) => {
         coverImage: user.userCoverImage,
         profileImage: user.userProfileImage,
         bio: user.userBio,
+        role: user.role,
       },
       token,
     });
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong" });
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
 export const googleAuth = async (req: Request, res: Response) => {
   try {
-    const { token } = req.body;
+    const { token, organizationName } = req.body;
     const payload = await verifyGoogleToken(token);
     if (!payload) {
-      return res.status(401).json({ message: "Invalid Google token" });
+      return res.status(401).json({ message: 'Invalid Google token' });
     }
 
     const { email, name, picture, sub } = payload;
@@ -106,6 +136,14 @@ export const googleAuth = async (req: Request, res: Response) => {
 
     if (!user) {
       //first time google login: create user
+      if (!organizationName || !organizationName.trim()) {
+        return res
+          .status(400)
+          .json({ message: 'Organization name is required for first-time sign-in' });
+      }
+
+      const { org, wasCreated } = await findOrCreateOrganization(organizationName);
+
       user = await User.create({
         userEmail: email,
         userName: name,
@@ -113,14 +151,15 @@ export const googleAuth = async (req: Request, res: Response) => {
         userProfileImage: picture,
         userPassword: null,
         isVerified: true,
+        orgId: org._id,
+        role: wasCreated ? 'admin' : 'contributor',
       });
 
       const resend = new Resend(process.env.RESEND_API_KEY);
       const result = await resend.emails.send({
-        from: "Verb <no-reply@send.verbblog.com>",
+        from: 'Verb <no-reply@send.verbblog.com>',
         to: user.userEmail,
-        subject:
-          "Welcome to Verb - where ideas compile into verbs and come to life",
+        subject: 'Welcome to Verb - where ideas compile into verbs and come to life',
         html: signUpMailTemplate(user.userName),
       });
     }
@@ -140,23 +179,23 @@ export const googleAuth = async (req: Request, res: Response) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(401).json({ message: "Google authentication failed" });
+    res.status(401).json({ message: 'Google authentication failed' });
   }
 };
 
 export const updateUserInfo = async (req: Request, res: Response) => {
   try {
     const authUserId = req.user?.id;
-    if (!authUserId) return res.status(401).json({ message: "Unauthorized" });
+    if (!authUserId) return res.status(401).json({ message: 'Unauthorized' });
 
     const { userName, userBio } = req.body;
     const files = req.files as { [field: string]: Express.Multer.File[] };
-    const profileFile = files?.["userProfileImage"]?.[0];
-    const coverFile = files?.["userCoverImage"]?.[0];
+    const profileFile = files?.['userProfileImage']?.[0];
+    const coverFile = files?.['userCoverImage']?.[0];
 
     const user = await User.findById(authUserId);
     if (!user) {
-      return res.status(400).json({ message: "Invalid user" });
+      return res.status(400).json({ message: 'Invalid user' });
     }
 
     user.userName = userName || user.userName;
@@ -173,7 +212,7 @@ export const updateUserInfo = async (req: Request, res: Response) => {
     const updatedUser = await user.save();
 
     res.status(200).json({
-      message: "User updated successfully",
+      message: 'User updated successfully',
       user: {
         id: updatedUser.id,
         email: updatedUser.userEmail,
@@ -181,32 +220,34 @@ export const updateUserInfo = async (req: Request, res: Response) => {
         bio: updatedUser.userBio,
         profileImage: updatedUser.userProfileImage,
         coverImage: updatedUser.userCoverImage,
+        role: updatedUser.role,
       },
     });
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong" });
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
 export const getUserProfile = async (req: Request, res: Response) => {
   try {
     const userId = req.params.id;
-    const user = await User.findById(userId).select("-userPassword");
+    const user = await User.findById(userId).select('-userPassword');
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: 'User not found' });
     }
     res.status(200).json({
       user: {
+        id: user.id,
         name: user.userName,
         email: user.userEmail,
         bio: user.userBio,
         coverImage: user.userCoverImage,
         profileImage: user.userProfileImage,
-        id: user.id,
+        role: user.role,
       },
     });
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong" });
+    res.status(500).json({ message: 'Something went wrong' });
   }
 };

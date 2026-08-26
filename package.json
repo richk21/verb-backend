@@ -3,6 +3,14 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "dev": "nodemon src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
   "dependencies": {
     "@types/multer": "^2.0.0",
     "@types/swagger-ui-express": "^4.1.8",
@@ -24,16 +32,15 @@
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
+    "@types/jest": "^30.0.0",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^24.1.0",
+    "@types/node": "^26.2.0",
     "@types/swagger-jsdoc": "^6.0.4",
+    "jest": "^30.4.2",
     "nodemon": "^3.1.10",
+    "ts-jest": "^29.4.12",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   },
-  "scripts": {
-    "dev": "nodemon src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
-  }
+  "packageManager": "yarn@4.12.0+sha512.f45ab632439a67f8bc759bf32ead036a1f413287b9042726b7cc4818b7b49e14e9423ba49b18f9e06ea4941c1ad062385b1d8760a8d5091a1a31e5f6219afca8"
 }

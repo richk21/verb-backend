@@ -1,4 +1,5 @@
 export interface IBlogFilters {
   authorId?: string | null;
-  isDraft?: boolean | null;
+  orgId?: string | null;
+  status?: "draft" | "under_review" | "approved" | "published" | null;
 }

@@ -8,9 +8,9 @@
     "resolveJsonModule": true,
     "moduleResolution": "node",
     "strict": true,
-    "types":["node"],
+    "types": ["node", "jest"],
     "typeRoots": ["./src/types", "./node_modules/@types"],
     "skipLibCheck": true
   },
-  "include": ["src"],
+  "include": ["src"]
 }

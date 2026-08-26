@@ -1,7 +1,14 @@
-import mongoose, { Schema, Document } from "mongoose";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import mongoose, { Document, Schema, Types } from "mongoose";
 
+export type UserRole = "contributor" | "reviewer" | "auditor" | "admin";
+export const USER_ROLES: UserRole[] = [
+  "contributor",
+  "reviewer",
+  "auditor",
+  "admin",
+]
 export interface IUser extends Document {
   userName: string;
   userEmail: string;
@@ -13,6 +20,8 @@ export interface IUser extends Document {
   isVerified: boolean;
   emailVerificationToken?: string;
   emailVerificationExpires?: Date;
+  role: UserRole;
+  orgId: Types.ObjectId;
   comparePassword(candidatePassword: string): Promise<boolean>;
   generateAuthToken(): string;
 }
@@ -25,6 +34,8 @@ const userSchema = new Schema<IUser>({
   userBio: { type: String, required: false },
   userCoverImage: { type: String, required: false },
   userProfileImage: { type: String, required: false },
+  role: { type: String, enum: USER_ROLES, default: "contributor"},
+  orgId: {type: Schema.Types.ObjectId, ref: "Organization", required: true},
   isVerified: { type: Boolean, default: false },
   emailVerificationToken: { type: String },
   emailVerificationExpires: { type: Date },
@@ -47,7 +58,7 @@ userSchema.methods.comparePassword = async function (
 
 userSchema.methods.generateAuthToken = function () {
   const token = jwt.sign(
-    { id: this._id, email: this.userEmail, name: this.userName },
+    { id: this._id, email: this.userEmail, name: this.userName, role: this.role, orgId: this.orgId },
     process.env.JWT_SECRET as string,
     { expiresIn: "24h" },
   );
