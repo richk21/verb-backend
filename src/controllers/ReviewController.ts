@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import Blog from '../models/Blog';
+import Report from '../models/Report';
 import { logAction } from '../utils/auditLogger';
 
 /**
@@ -13,34 +13,34 @@ export const submitForReview = async (req: Request, res: Response) => {
     const orgId = req.user?.orgId;
     if (!userId || !orgId) return res.status(401).json({ message: 'Unauthorized' });
 
-    const blog = await Blog.findById(id);
-    if (!blog || blog.orgId?.toString() !== orgId) {
-      return res.status(404).json({ message: 'Blog not found' });
+    const report = await Report.findById(id);
+    if (!report || report.orgId?.toString() !== orgId) {
+      return res.status(404).json({ message: 'Report not found' });
     }
-    if (blog.authorId?.toString() !== userId) {
+    if (report.authorId?.toString() !== userId) {
       return res.status(403).json({ message: 'Only the author can submit this for review' });
     }
-    if (blog.status !== 'draft') {
+    if (report.status !== 'draft') {
       return res
         .status(400)
-        .json({ message: `Cannot submit for review from status "${blog.status}"` });
+        .json({ message: `Cannot submit for review from status "${report.status}"` });
     }
 
-    blog.status = 'under_review';
-    await blog.save();
+    report.status = 'under_review';
+    await report.save();
 
     await logAction({
       req,
-      action: 'blog.submitted_for_review',
-      targetType: 'Blog',
-      targetId: blog.id,
+      action: 'report.submitted_for_review',
+      targetType: 'Report',
+      targetId: report.id,
       before: { status: 'draft' },
       after: { status: 'under_review' },
     });
 
-    res.json(blog);
+    res.json(report);
   } catch (err) {
-    console.error('Error submitting blog for review:', err);
+    console.error('Error submitting report for review:', err);
     res.status(500).json({ error: 'Failed to submit for review' });
   }
 };
@@ -51,37 +51,37 @@ export const submitForReview = async (req: Request, res: Response) => {
  * (Route-level requireRole("reviewer", "admin") enforces WHO can call this;
  * this function only enforces the state transition itself.)
  */
-export const approveBlog = async (req: Request, res: Response) => {
+export const approveReport = async (req: Request, res: Response) => {
   try {
     const { id } = req.body;
     const orgId = req.user?.orgId;
     if (!orgId) return res.status(401).json({ message: 'Unauthorized' });
 
-    const blog = await Blog.findById(id);
-    if (!blog || blog.orgId?.toString() !== orgId) {
-      return res.status(404).json({ message: 'Blog not found' });
+    const report = await Report.findById(id);
+    if (!report || report.orgId?.toString() !== orgId) {
+      return res.status(404).json({ message: 'Report not found' });
     }
-    if (blog.status !== 'under_review') {
-      return res.status(400).json({ message: `Cannot approve from status "${blog.status}"` });
+    if (report.status !== 'under_review') {
+      return res.status(400).json({ message: `Cannot approve from status "${report.status}"` });
     }
 
-    blog.status = 'approved';
-    blog.reviewerId = req.user!.id;
-    await blog.save();
+    report.status = 'approved';
+    report.reviewerId = req.user!.id;
+    await report.save();
 
     await logAction({
       req,
-      action: 'blog.approved',
-      targetType: 'Blog',
-      targetId: blog.id,
+      action: 'report.approved',
+      targetType: 'Report',
+      targetId: report.id,
       before: { status: 'under_review' },
       after: { status: 'approved', reviewerId: req.user!.id },
     });
 
-    res.json(blog);
+    res.json(report);
   } catch (err) {
-    console.error('Error approving blog:', err);
-    res.status(500).json({ error: 'Failed to approve blog' });
+    console.error('Error approving report:', err);
+    res.status(500).json({ error: 'Failed to approve report' });
   }
 };
 
@@ -98,37 +98,37 @@ export const requestChanges = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'A comment is required when requesting changes' });
     }
 
-    const blog = await Blog.findById(id);
-    if (!blog || blog.orgId?.toString() !== orgId) {
-      return res.status(404).json({ message: 'Blog not found' });
+    const report = await Report.findById(id);
+    if (!report || report.orgId?.toString() !== orgId) {
+      return res.status(404).json({ message: 'Report not found' });
     }
-    if (blog.status !== 'under_review') {
+    if (report.status !== 'under_review') {
       return res
         .status(400)
-        .json({ message: `Cannot request changes from status "${blog.status}"` });
+        .json({ message: `Cannot request changes from status "${report.status}"` });
     }
 
-    blog.reviewerComments.push({
+    report.reviewerComments.push({
       id: `${Date.now()}`,
       authorId: req.user!.id,
       authorName: req.user!.name,
       text: comment.trim(),
       createdAt: new Date(),
     });
-    blog.status = 'draft';
-    blog.reviewerId = req.user!.id;
-    await blog.save();
+    report.status = 'draft';
+    report.reviewerId = req.user!.id;
+    await report.save();
 
     await logAction({
       req,
-      action: 'blog.changes_requested',
-      targetType: 'Blog',
-      targetId: blog.id,
+      action: 'report.changes_requested',
+      targetType: 'Report',
+      targetId: report.id,
       before: { status: 'under_review' },
       after: { status: 'draft', comment: comment.trim() },
     });
 
-    res.json(blog);
+    res.json(report);
   } catch (err) {
     console.error('Error requesting changes:', err);
     res.status(500).json({ error: 'Failed to request changes' });
@@ -138,36 +138,36 @@ export const requestChanges = async (req: Request, res: Response) => {
 /**
  * Reviewer/admin gives final publish sign-off. approved -> published
  */
-export const publishBlog = async (req: Request, res: Response) => {
+export const publishReport = async (req: Request, res: Response) => {
   try {
     const { id } = req.body;
     const orgId = req.user?.orgId;
     if (!orgId) return res.status(401).json({ message: 'Unauthorized' });
 
-    const blog = await Blog.findById(id);
-    if (!blog || blog.orgId?.toString() !== orgId) {
-      return res.status(404).json({ message: 'Blog not found' });
+    const report = await Report.findById(id);
+    if (!report || report.orgId?.toString() !== orgId) {
+      return res.status(404).json({ message: 'Report not found' });
     }
-    if (blog.status !== 'approved') {
-      return res.status(400).json({ message: `Cannot publish from status "${blog.status}"` });
+    if (report.status !== 'approved') {
+      return res.status(400).json({ message: `Cannot publish from status "${report.status}"` });
     }
 
-    blog.status = 'published';
-    await blog.save();
+    report.status = 'published';
+    await report.save();
 
     await logAction({
       req,
-      action: 'blog.published',
-      targetType: 'Blog',
-      targetId: blog.id,
+      action: 'report.published',
+      targetType: 'Report',
+      targetId: report.id,
       before: { status: 'approved' },
       after: { status: 'published' },
     });
 
-    res.json(blog);
+    res.json(report);
   } catch (err) {
-    console.error('Error publishing blog:', err);
-    res.status(500).json({ error: 'Failed to publish blog' });
+    console.error('Error publishing report:', err);
+    res.status(500).json({ error: 'Failed to publish report' });
   }
 };
 
@@ -185,30 +185,30 @@ export const addReviewComment = async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Comment text is required' });
     }
 
-    const blog = await Blog.findById(id);
-    if (!blog || blog.orgId?.toString() !== orgId) {
-      return res.status(404).json({ message: 'Blog not found' });
+    const report = await Report.findById(id);
+    if (!report || report.orgId?.toString() !== orgId) {
+      return res.status(404).json({ message: 'Report not found' });
     }
 
-    blog.reviewerComments.push({
+    report.reviewerComments.push({
       id: `${Date.now()}`,
       authorId: req.user!.id,
       authorName: req.user!.name,
       text: comment.trim(),
       createdAt: new Date(),
     });
-    await blog.save();
+    await report.save();
 
     await logAction({
       req,
-      action: 'blog.comment_added',
-      targetType: 'Blog',
-      targetId: blog.id,
+      action: 'report.comment_added',
+      targetType: 'Report',
+      targetId: report.id,
       before: null,
       after: { comment: comment.trim() },
     });
 
-    res.json(blog);
+    res.json(report);
   } catch (err) {
     console.error('Error adding review comment:', err);
     res.status(500).json({ error: 'Failed to add comment' });

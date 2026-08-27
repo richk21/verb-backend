@@ -1,8 +1,8 @@
 import mongoose from 'mongoose';
 
-export const BLOG_STATUS = ['draft', 'under_review', 'approved', 'published'] as const;
+export const REPORT_STATUS = ['draft', 'under_review', 'approved', 'published'] as const;
 
-const BlogSchema = new mongoose.Schema({
+const ReportSchema = new mongoose.Schema({
   title: String,
   hashtags: { type: [String] },
   coverImage: String,
@@ -17,7 +17,7 @@ const BlogSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
-  status: { type: String, enum: BLOG_STATUS, default: 'draft' },
+  status: { type: String, enum: REPORT_STATUS, default: 'draft' },
   reviewerId: { type: String, default: null },
   reviewerComments: {
     type: [
@@ -43,12 +43,12 @@ const BlogSchema = new mongoose.Schema({
   },
 });
 
-BlogSchema.index({ orgId: 1, status: 1 });
+ReportSchema.index({ orgId: 1, status: 1 });
 
-BlogSchema.virtual('id').get(function () {
+ReportSchema.virtual('id').get(function () {
   return this._id?.toString();
 });
-BlogSchema.set('toJSON', { virtuals: true });
-BlogSchema.set('toObject', { virtuals: true });
+ReportSchema.set('toJSON', { virtuals: true });
+ReportSchema.set('toObject', { virtuals: true });
 
-export default mongoose.model('Blog', BlogSchema);
+export default mongoose.model('Report', ReportSchema);

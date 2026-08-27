@@ -1,13 +1,13 @@
-import { Router } from "express";
+import { Router } from 'express';
+import { upload } from '../config/multer';
 import {
   createUser,
   getUserProfile,
   googleAuth,
   loginUser,
   updateUserInfo,
-} from "../controllers/UserController";
-import { upload } from "../config/multer";
-import { authMiddleware } from "../middleware/auth";
+} from '../controllers/UserController';
+import { authMiddleware } from '../middleware/auth';
 
 const router = Router();
 
@@ -35,7 +35,7 @@ const router = Router();
  *       201:
  *         description: Created user successfully
  */
-router.post("/signup", createUser);
+router.post('/signup', createUser);
 
 /**
  * @swagger
@@ -59,20 +59,20 @@ router.post("/signup", createUser);
  *       200:
  *         description: User Logged in successfully
  */
-router.post("/login", loginUser);
+router.post('/login', loginUser);
 
 router.post(
-  "/updateInfo",
+  '/updateInfo',
   authMiddleware,
   upload.fields([
-    { name: "userCoverImage", maxCount: 1 },
-    { name: "userProfileImage", maxCount: 1 },
+    { name: 'userCoverImage', maxCount: 1 },
+    { name: 'userProfileImage', maxCount: 1 },
   ]),
-  updateUserInfo,
+  updateUserInfo
 );
 
-router.get("/getProfile/:id", getUserProfile);
+router.get('/getProfile/:id', getUserProfile);
 
-router.post("/google-auth", googleAuth);
+router.post('/google-auth', googleAuth);
 
 export default router;

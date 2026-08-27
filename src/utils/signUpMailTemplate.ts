@@ -1,5 +1,5 @@
 export const signUpMailTemplate = (
-  username: string,
+  username: string
 ) => `<div style="font-family: Arial, Helvetica, sans-serif; background-color: #0f0f0f; padding: 32px;">
       <div style="max-width: 560px; margin: 0 auto; background-color: #161616; border-radius: 12px; padding: 32px; color: #ffffff;">
         
@@ -17,7 +17,7 @@ export const signUpMailTemplate = (
         </p>
 
         <ul style="padding-left: 20px; color: #cccccc; font-size: 15px; line-height: 1.6;">
-          <li>✍️ Write and publish tech blogs</li>
+          <li>✍️ Write and publish tech reports</li>
           <li>🧠 Document learnings, tutorials, and experiments</li>
           <li>📚 Build your personal knowledge stack</li>
           <li>🚀 Share ideas without noise or clutter</li>
@@ -25,7 +25,7 @@ export const signUpMailTemplate = (
 
         <div style="margin: 32px 0; text-align: center;">
           <a
-            href="https://verbblog.netlify.app/blog-post"
+            href="https://verbreport.netlify.app/report-post"
             style="
               display: inline-block;
               padding: 12px 24px;
@@ -37,7 +37,7 @@ export const signUpMailTemplate = (
               font-size: 15px;
             "
           >
-            Write your first blog →
+            Write your first report →
           </a>
         </div>
 

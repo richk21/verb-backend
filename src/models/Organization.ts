@@ -1,9 +1,9 @@
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document, Schema } from 'mongoose';
 
 export interface IOrganization extends Document {
-    name: string;
-    slug: string;
-    createdAt: Date;
+  name: string;
+  slug: string;
+  createdAt: Date;
 }
 
 const organizationSchema = new Schema<IOrganization>({
@@ -12,4 +12,4 @@ const organizationSchema = new Schema<IOrganization>({
   createdAt: { type: Date, default: Date.now },
 });
 
-export default mongoose.model<IOrganization>("Organization", organizationSchema);
+export default mongoose.model<IOrganization>('Organization', organizationSchema);

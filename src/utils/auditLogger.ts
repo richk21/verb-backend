@@ -4,7 +4,7 @@ import AuditLog, { AuditAction } from '../models/AuditLog';
 interface LogActionParams {
   req: Request;
   action: AuditAction;
-  targetType: 'Blog' | 'User';
+  targetType: 'Report' | 'User';
   targetId: string;
   before?: unknown;
   after?: unknown;

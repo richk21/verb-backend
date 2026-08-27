@@ -157,7 +157,7 @@ export const googleAuth = async (req: Request, res: Response) => {
 
       const resend = new Resend(process.env.RESEND_API_KEY);
       const result = await resend.emails.send({
-        from: 'Verb <no-reply@send.verbblog.com>',
+        from: 'Verb <no-reply@send.verbblog.com>', // todo: change the email to verb reporting or something
         to: user.userEmail,
         subject: 'Welcome to Verb - where ideas compile into verbs and come to life',
         html: signUpMailTemplate(user.userName),

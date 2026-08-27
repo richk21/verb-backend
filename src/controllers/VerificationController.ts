@@ -1,14 +1,14 @@
-import crypto from "crypto";
-import User from "../models/User";
-import { Request, Response } from "express";
-import { Resend } from "resend";
-import { signUpMailTemplate } from "../utils/signUpMailTemplate";
+import crypto from 'crypto';
+import { Request, Response } from 'express';
+import { Resend } from 'resend';
+import User from '../models/User';
+import { signUpMailTemplate } from '../utils/signUpMailTemplate';
 
 export const verifyEmail = async (req: Request, res: Response) => {
   try {
     const { token } = req.params;
 
-    const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
     const user = await User.findOne({
       emailVerificationToken: hashedToken,
@@ -16,7 +16,7 @@ export const verifyEmail = async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      return res.status(400).json({ message: "Invalid or expired token" });
+      return res.status(400).json({ message: 'Invalid or expired token' });
     }
 
     user.isVerified = true;
@@ -27,15 +27,14 @@ export const verifyEmail = async (req: Request, res: Response) => {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
     await resend.emails.send({
-      from: "Verb <no-reply@send.verbblog.com>",
+      from: 'Verb <no-reply@send.verbblog.com>', // todo: change this to verb reporting or something
       to: user.userEmail,
-      subject:
-        "Welcome to Verb - where ideas compile into verbs and come to life",
+      subject: 'Welcome to Verb - where ideas compile into verbs and come to life',
       html: signUpMailTemplate(user.userName),
     });
 
     res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
   } catch (error) {
-    res.status(500).json({ message: "Verification failed" });
+    res.status(500).json({ message: 'Verification failed' });
   }
 };

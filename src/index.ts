@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import auditLogRoutes from './routes/auditLogRoutes';
-import blogRoutes from './routes/blogRoutes';
+import reportRoutes from './routes/reportRoutes';
 import unsplashRoutes from './routes/unsplashRoutes';
 import userRoutes from './routes/userRoutes';
 
@@ -24,7 +24,7 @@ app.use(express.json());
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api/users', userRoutes);
-app.use('/api/blogs', blogRoutes);
+app.use('/api/reports', reportRoutes);
 app.use('/api/unsplash', unsplashRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 

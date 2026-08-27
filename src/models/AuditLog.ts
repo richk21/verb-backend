@@ -1,22 +1,22 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
 export type AuditAction =
-  | 'blog.created'
-  | 'blog.updated'
-  | 'blog.deleted'
+  | 'report.created'
+  | 'report.updated'
+  | 'report.deleted'
   | 'user.role_changed'
-  | 'blog.submitted_for_review'
-  | 'blog.approved'
-  | 'blog.changes_requested'
-  | 'blog.published'
-  | 'blog.comment_added';
+  | 'report.submitted_for_review'
+  | 'report.approved'
+  | 'report.changes_requested'
+  | 'report.published'
+  | 'report.comment_added';
 
 export interface IAuditLog extends Document {
   orgId: mongoose.Types.ObjectId;
   actorId: string;
   actorRole: string;
   action: AuditAction;
-  targetType: 'Blog' | 'User';
+  targetType: 'Report' | 'User';
   targetId: string;
   before: unknown;
   after: unknown;
