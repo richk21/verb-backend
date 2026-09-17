@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
 import { IReportFilters } from '../interfaces/reportFilters';
-import Report from '../models/Report';
+import Report, { REPORT_STATUS } from '../models/Report';
 import User from '../models/User';
 import { logAction } from '../utils/auditLogger';
 
-export const createReport = async (req: Request, res: Response) => {
+export const createOrUpdateReport = async (req: Request, res: Response) => {
   try {
     const {
       id,
@@ -38,7 +38,7 @@ export const createReport = async (req: Request, res: Response) => {
       coverImage,
       authorAvatar,
       createdAt,
-      status: isDraft === false ? 'published' : 'draft',
+      status: isDraft === false ? REPORT_STATUS.PUBLISHED : REPORT_STATUS.DRAFT,
     });
 
     const savedReport = await newReport.save();
@@ -83,6 +83,8 @@ export const updateReport = async (req: Request, res: Response) => {
 
     const beforeSnapshot = { title: report.title, status: report.status };
 
+    //set status of the report back to DRAFT
+    req.body.status = REPORT_STATUS.DRAFT;
     const updatedReport = await Report.findByIdAndUpdate(reportId, req.body, {
       new: true,
     });

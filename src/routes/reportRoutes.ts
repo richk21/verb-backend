@@ -1,11 +1,10 @@
 import { Router } from 'express';
 import {
-  createReport,
+  createOrUpdateReport,
   deleteReport,
   getAllReports,
   getAllUserReports,
   getById,
-  updateReport,
 } from '../controllers/ReportController';
 import {
   addReviewComment,
@@ -20,8 +19,7 @@ import { complianceScanner } from '../middleware/complianceScanner';
 const router = Router();
 
 // these are only allowed through users auth
-router.get('/publish', authMiddleware, complianceScanner, updateReport);
-router.post('/save', authMiddleware, complianceScanner, createReport);
+router.post('/save', authMiddleware, complianceScanner, createOrUpdateReport);
 
 //these public endpoints need to be having auth middleware as they're scoped by orgId
 router.get('/getAll', authMiddleware, getAllReports);

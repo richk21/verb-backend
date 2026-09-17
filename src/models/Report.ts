@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
-export const REPORT_STATUS = ['draft', 'under_review', 'approved', 'published'] as const;
+export const REPORT_STATUS = {
+  DRAFT: 'draft',
+  UNDER_REVIEW: 'under_review',
+  APPROVED: 'approved',
+  PUBLISHED: 'published',
+} as const;
 
 const ReportSchema = new mongoose.Schema({
   title: String,
@@ -26,7 +31,7 @@ const ReportSchema = new mongoose.Schema({
         authorId: { type: String, required: true },
         authorName: { type: String, required: true },
         text: { type: String, required: true },
-        createdAT: { type: Date, default: Date.now },
+        createdAt: { type: Date, default: Date.now },
       },
     ],
     default: [],
