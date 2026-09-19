@@ -180,6 +180,11 @@ export const getById = async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Report not found' });
     }
 
+    if (report.reviewerId) {
+      const reviewer = await User.findById(report.reviewerId);
+      report.reviewerName = reviewer?.userName || '';
+    }
+
     const author = await User.findById(report?.authorId);
     report.authorAvatar = author?.userProfileImage || '';
     report.authorName = author?.userName || '';

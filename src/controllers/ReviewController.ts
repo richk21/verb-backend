@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import Report from '../models/Report';
+import User from '../models/User';
 import { logAction } from '../utils/auditLogger';
+import { createNotification } from '../utils/notifications';
 
 /**
  * Author submits their own draft for review.
@@ -8,10 +10,18 @@ import { logAction } from '../utils/auditLogger';
  */
 export const submitForReview = async (req: Request, res: Response) => {
   try {
-    const { id } = req.body;
+    const { id, reviewerId } = req.body;
     const userId = req.user?.id;
     const orgId = req.user?.orgId;
     if (!userId || !orgId) return res.status(401).json({ message: 'Unauthorized' });
+
+    if (!reviewerId) {
+      return res.status(400).json({ message: 'A reviewer must be selected.' });
+    }
+
+    if (reviewerId === userId) {
+      return res.status(400).json({ message: 'You cannot select yourself as a reviewer.' });
+    }
 
     const report = await Report.findById(id);
     if (!report || report.orgId?.toString() !== orgId) {
@@ -26,7 +36,19 @@ export const submitForReview = async (req: Request, res: Response) => {
         .json({ message: `Cannot submit for review from status "${report.status}"` });
     }
 
+    const reviewer = await User.findOne({
+      _id: reviewerId,
+      orgId,
+      role: { $in: ['reviewer', 'admin'] },
+    });
+    if (!reviewer) {
+      return res
+        .status(400)
+        .json({ message: 'Selected reviewer is not valid for this organization.' });
+    }
+
     report.status = 'under_review';
+    report.reviewerId = reviewerId;
     await report.save();
 
     await logAction({
@@ -35,7 +57,15 @@ export const submitForReview = async (req: Request, res: Response) => {
       targetType: 'Report',
       targetId: report.id,
       before: { status: 'draft' },
-      after: { status: 'under_review' },
+      after: { status: 'under_review', reviewerId },
+    });
+
+    await createNotification({
+      userId: reviewerId,
+      orgId,
+      type: 'review_assigned',
+      message: `${req.user!.name} submitted "${report.title}" for your review.`,
+      link: `/report/${report.id}`,
     });
 
     res.json(report);
@@ -61,6 +91,11 @@ export const approveReport = async (req: Request, res: Response) => {
     if (!report || report.orgId?.toString() !== orgId) {
       return res.status(404).json({ message: 'Report not found' });
     }
+
+    if (report.reviewerId !== req.user!.id) {
+      return res.status(403).json({ message: 'Only the assigned reviewer can act on this report' });
+    }
+
     if (report.status !== 'under_review') {
       return res.status(400).json({ message: `Cannot approve from status "${report.status}"` });
     }
@@ -76,6 +111,14 @@ export const approveReport = async (req: Request, res: Response) => {
       targetId: report.id,
       before: { status: 'under_review' },
       after: { status: 'approved', reviewerId: req.user!.id },
+    });
+
+    await createNotification({
+      userId: report.authorId ?? '',
+      orgId,
+      type: 'report_approved',
+      message: `Your report "${report.title}" was approved and is pending final publish.`,
+      link: `/report/${report.id}`,
     });
 
     res.json(report);
@@ -102,6 +145,11 @@ export const requestChanges = async (req: Request, res: Response) => {
     if (!report || report.orgId?.toString() !== orgId) {
       return res.status(404).json({ message: 'Report not found' });
     }
+
+    if (report.reviewerId !== req.user!.id) {
+      return res.status(403).json({ message: 'Only the assigned reviewer can act on this report' });
+    }
+
     if (report.status !== 'under_review') {
       return res
         .status(400)
@@ -128,6 +176,14 @@ export const requestChanges = async (req: Request, res: Response) => {
       after: { status: 'draft', comment: comment.trim() },
     });
 
+    await createNotification({
+      userId: report.authorId ?? '',
+      orgId,
+      type: 'changes_requested',
+      message: `Changes were requested on "${report.title}". It's back in your drafts.`,
+      link: `/report/${report.id}`,
+    });
+
     res.json(report);
   } catch (err) {
     console.error('Error requesting changes:', err);
@@ -148,6 +204,11 @@ export const publishReport = async (req: Request, res: Response) => {
     if (!report || report.orgId?.toString() !== orgId) {
       return res.status(404).json({ message: 'Report not found' });
     }
+
+    if (report.reviewerId !== req.user!.id) {
+      return res.status(403).json({ message: 'Only the assigned reviewer can act on this report' });
+    }
+
     if (report.status !== 'approved') {
       return res.status(400).json({ message: `Cannot publish from status "${report.status}"` });
     }
@@ -162,6 +223,14 @@ export const publishReport = async (req: Request, res: Response) => {
       targetId: report.id,
       before: { status: 'approved' },
       after: { status: 'published' },
+    });
+
+    await createNotification({
+      userId: report.authorId ?? '',
+      orgId,
+      type: 'report_published',
+      message: `Your report "${report.title}" has been published.`,
+      link: `/report/${report.id}`,
     });
 
     res.json(report);

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { upload } from '../config/multer';
 import {
   createUser,
+  getOrgMembers,
   getUserProfile,
   googleAuth,
   loginUser,
@@ -74,5 +75,7 @@ router.post(
 router.get('/getProfile/:id', getUserProfile);
 
 router.post('/google-auth', googleAuth);
+
+router.get('/org-members', authMiddleware, getOrgMembers);
 
 export default router;

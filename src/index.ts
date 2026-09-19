@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import auditLogRoutes from './routes/auditLogRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 import reportRoutes from './routes/reportRoutes';
 import unsplashRoutes from './routes/unsplashRoutes';
 import userRoutes from './routes/userRoutes';
@@ -27,6 +28,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/unsplash', unsplashRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 const PORT = process.env.PORT;
 

@@ -251,3 +251,33 @@ export const getUserProfile = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
+
+export const getOrgMembers = async (req: Request, res: Response) => {
+  try {
+    const orgId = req.user?.orgId;
+    const userId = req.user?.id;
+    if (!orgId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const rolesParam = (req.query.roles as string) || 'reviewer,admin';
+    const roles = rolesParam.split(',');
+
+    const members = await User.find({
+      orgId,
+      role: { $in: roles },
+      _id: { $ne: userId }, // never list yourself — you can't assign yourself as reviewer
+    }).select('userName userEmail userProfileImage role');
+
+    res.json({
+      members: members.map((m) => ({
+        id: m.id,
+        name: m.userName,
+        email: m.userEmail,
+        profileImage: m.userProfileImage,
+        role: m.role,
+      })),
+    });
+  } catch (err) {
+    console.error('Error fetching org members:', err);
+    res.status(500).json({ error: 'Failed to fetch org members' });
+  }
+};

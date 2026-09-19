@@ -16,6 +16,7 @@ const ReportSchema = new mongoose.Schema({
   authorName: String,
   authorAvatar: String,
   createdAt: String,
+  reviewerName: { type: String, default: null },
   orgId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Organization',
