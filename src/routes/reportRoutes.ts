@@ -10,6 +10,7 @@ import {
   addReviewComment,
   approveReport,
   publishReport,
+  replyToComment,
   requestChanges,
   submitForReview,
 } from '../controllers/ReviewController';
@@ -37,5 +38,6 @@ router.post('/approve', authMiddleware, requireRole('reviewer', 'admin'), approv
 router.post('/request-changes', authMiddleware, requireRole('reviewer', 'admin'), requestChanges);
 router.post('/publish-final', authMiddleware, requireRole('reviewer', 'admin'), publishReport);
 router.post('/comment', authMiddleware, requireRole('reviewer', 'admin'), addReviewComment);
+router.post('/comment/reply', authMiddleware, replyToComment);
 
 export default router;

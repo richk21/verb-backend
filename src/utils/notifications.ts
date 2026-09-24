@@ -1,9 +1,9 @@
-import Notification from '../models/Notification';
+import Notification, { NotificationType } from '../models/Notification';
 
 interface CreateNotificationParams {
   userId: string;
   orgId: string;
-  type: 'review_assigned' | 'report_approved' | 'changes_requested' | 'report_published';
+  type: NotificationType;
   message: string;
   link: string;
 }

@@ -33,6 +33,18 @@ const ReportSchema = new mongoose.Schema({
         authorName: { type: String, required: true },
         text: { type: String, required: true },
         createdAt: { type: Date, default: Date.now },
+        replies: {
+          type: [
+            {
+              id: { type: String, required: true },
+              authorId: { type: String, required: true },
+              authorName: { type: String, required: true },
+              text: { type: String, required: true },
+              createdAt: { type: Date, default: Date.now },
+            },
+          ],
+          default: [],
+        },
       },
     ],
     default: [],
@@ -54,7 +66,21 @@ ReportSchema.index({ orgId: 1, status: 1 });
 ReportSchema.virtual('id').get(function () {
   return this._id?.toString();
 });
-ReportSchema.set('toJSON', { virtuals: true });
-ReportSchema.set('toObject', { virtuals: true });
+ReportSchema.set('toJSON', {
+  virtuals: true,
+  transform: (_doc, ret) => {
+    const plain = ret as Record<string, unknown>;
+    delete plain._id;
+    return plain;
+  },
+});
+ReportSchema.set('toObject', {
+  virtuals: true,
+  transform: (_doc, ret) => {
+    const plain = ret as Record<string, unknown>;
+    delete plain._id;
+    return plain;
+  },
+});
 
 export default mongoose.model('Report', ReportSchema);

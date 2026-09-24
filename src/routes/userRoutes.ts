@@ -1,14 +1,16 @@
 import { Router } from 'express';
 import { upload } from '../config/multer';
 import {
+  changeUserRole,
   createUser,
+  getAllOrgMembers,
   getOrgMembers,
   getUserProfile,
   googleAuth,
   loginUser,
   updateUserInfo,
 } from '../controllers/UserController';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware, requireRole } from '../middleware/auth';
 
 const router = Router();
 
@@ -77,5 +79,9 @@ router.get('/getProfile/:id', getUserProfile);
 router.post('/google-auth', googleAuth);
 
 router.get('/org-members', authMiddleware, getOrgMembers);
+
+router.get('/org-members/all', authMiddleware, requireRole('admin'), getAllOrgMembers);
+
+router.patch('/:id/role', authMiddleware, requireRole('admin'), changeUserRole);
 
 export default router;

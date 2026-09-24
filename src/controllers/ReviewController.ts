@@ -265,6 +265,7 @@ export const addReviewComment = async (req: Request, res: Response) => {
       authorName: req.user!.name,
       text: comment.trim(),
       createdAt: new Date(),
+      replies: [],
     });
     await report.save();
 
@@ -281,5 +282,62 @@ export const addReviewComment = async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Error adding review comment:', err);
     res.status(500).json({ error: 'Failed to add comment' });
+  }
+};
+
+export const replyToComment = async (req: Request, res: Response) => {
+  try {
+    const { id, commentId, text } = req.body;
+    const userId = req.user?.id;
+    const orgId = req.user?.orgId;
+    if (!userId || !orgId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!commentId || !text || !text.trim()) {
+      return res.status(400).json({ message: 'Reply text is required' });
+    }
+
+    const report = await Report.findById(id);
+    if (!report || report.orgId?.toString() !== orgId) {
+      return res.status(404).json({ message: 'Report not found' });
+    }
+
+    const comment = report.reviewerComments.find((item) => item.id === commentId);
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    const canReply =
+      report.authorId?.toString() === userId ||
+      comment.authorId?.toString() === userId ||
+      req.user?.role === 'reviewer' ||
+      req.user?.role === 'admin';
+
+    if (!canReply) {
+      return res.status(403).json({ message: 'You are not allowed to reply to this comment' });
+    }
+
+    comment.replies = comment.replies || [];
+    comment.replies.push({
+      id: `${Date.now()}`,
+      authorId: userId,
+      authorName: req.user!.name,
+      text: text.trim(),
+      createdAt: new Date(),
+    });
+
+    await report.save();
+
+    await logAction({
+      req,
+      action: 'report.comment_replied',
+      targetType: 'Report',
+      targetId: report.id,
+      before: null,
+      after: { commentId, reply: text.trim() },
+    });
+
+    res.json(report);
+  } catch (err) {
+    console.error('Error replying to review comment:', err);
+    res.status(500).json({ error: 'Failed to reply to comment' });
   }
 };

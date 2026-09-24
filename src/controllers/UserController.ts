@@ -2,8 +2,10 @@ import crypto from 'crypto';
 import { Request, Response } from 'express';
 import { Resend } from 'resend';
 import Organization from '../models/Organization';
-import User from '../models/User';
+import User, { USER_ROLES, UserRole } from '../models/User';
+import { logAction } from '../utils/auditLogger';
 import { verifyGoogleToken } from '../utils/googleAuth';
+import { createNotification } from '../utils/notifications';
 import { signUpMailTemplate } from '../utils/signUpMailTemplate';
 
 const slugify = (name: string) =>
@@ -279,5 +281,72 @@ export const getOrgMembers = async (req: Request, res: Response) => {
   } catch (err) {
     console.error('Error fetching org members:', err);
     res.status(500).json({ error: 'Failed to fetch org members' });
+  }
+};
+
+export const getAllOrgMembers = async (req: Request, res: Response) => {
+  try {
+    const orgId = req.user?.orgId;
+    if (!orgId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const members = await User.find({ orgId }).select('userName userEmail userProfileImage role');
+    res.json({
+      members: members.map((m) => ({
+        id: m.id,
+        name: m.userName,
+        email: m.userEmail,
+        profileImage: m.userProfileImage,
+        role: m.role,
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch organization members' });
+  }
+};
+
+export const changeUserRole = async (req: Request, res: Response) => {
+  try {
+    const orgId = req.user?.orgId;
+    const actorId = req.user?.id;
+    const { role } = req.body;
+    const targetUserId = req.params.id;
+
+    if (!orgId || !actorId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!USER_ROLES.includes(role)) {
+      return res.status(400).json({ message: 'Invalid role' });
+    }
+    if (targetUserId === actorId) {
+      return res.status(400).json({ message: 'You cannot change your own role' });
+    }
+
+    const targetUser = await User.findOne({ _id: targetUserId, orgId });
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found in your organization' });
+    }
+
+    const previousRole = targetUser.role;
+    targetUser.role = role as UserRole;
+    await targetUser.save();
+
+    await logAction({
+      req,
+      action: 'user.role_changed',
+      targetType: 'User',
+      targetId: targetUser.id,
+      before: { role: previousRole },
+      after: { role },
+    });
+
+    await createNotification({
+      userId: targetUser.id,
+      orgId,
+      type: 'role_changed',
+      message: `Your role was changed from ${previousRole} to ${role} by ${req.user!.name}.`,
+      link: '/profile',
+    });
+
+    res.json({ id: targetUser.id, role: targetUser.role });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to change role' });
   }
 };

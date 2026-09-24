@@ -1,0 +1,9 @@
+node_modules
+dist
+.env
+.env.example
+*.log
+.git
+.yarn
+coverage
+src/**/__tests__

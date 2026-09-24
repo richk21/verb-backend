@@ -49,7 +49,7 @@ export const markAsRead = async (req: Request, res: Response) => {
     await notification.save();
     res.json(notification);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to mark notification as read' });
+    res.status(500).json({ error: 'Failed to mark notification as read' + err });
   }
 };
 

@@ -5,7 +5,15 @@ export const NOTIFICATION_TYPES = [
   'report_approved',
   'changes_requested',
   'report_published',
+  'role_changed',
 ] as const;
+
+export type NotificationType =
+  | 'review_assigned'
+  | 'report_approved'
+  | 'changes_requested'
+  | 'report_published'
+  | 'role_changed';
 
 const NotificationSchema = new mongoose.Schema({
   userId: { type: String, required: true, index: true }, // recipient
@@ -23,5 +31,27 @@ const NotificationSchema = new mongoose.Schema({
 });
 
 NotificationSchema.index({ userId: 1, createdAt: -1 });
+
+NotificationSchema.virtual('id').get(function () {
+  return this._id?.toString();
+});
+
+NotificationSchema.set('toJSON', {
+  virtuals: true,
+  transform: (_doc, ret) => {
+    const plain = ret as Record<string, unknown>;
+    delete plain._id;
+    return plain;
+  },
+});
+
+NotificationSchema.set('toObject', {
+  virtuals: true,
+  transform: (_doc, ret) => {
+    const plain = ret as Record<string, unknown>;
+    delete plain._id;
+    return plain;
+  },
+});
 
 export default mongoose.model('Notification', NotificationSchema);

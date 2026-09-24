@@ -9,7 +9,8 @@ export type AuditAction =
   | 'report.approved'
   | 'report.changes_requested'
   | 'report.published'
-  | 'report.comment_added';
+  | 'report.comment_added'
+  | 'report.comment_replied';
 
 export interface IAuditLog extends Document {
   orgId: mongoose.Types.ObjectId;
