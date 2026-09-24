@@ -9,6 +9,19 @@ Frontend repo: `<link to your verb frontend repo>`
 
 ---
 
+## 🔐 How to Log In and View Reports
+
+Once the application is running and the database has been seeded, use the following credentials to access the showcase dashboard:
+
+1. Open your browser and navigate to **http://localhost:3000**
+2. On the login page, enter **your email address**.
+3. For the **Company Name**, type: `abc-tech`
+4. Click **Log In**.
+
+> 💡 **Note:** Logging in with `abc-tech` links your session to the seeded showcase workspace. You will immediately be able to view all pre-generated reports, roles, and documents currently under review for the company dashboard.
+
+---
+
 ## What this API does
 
 - **Multi-tenant organizations.** Every user and report belongs to an
