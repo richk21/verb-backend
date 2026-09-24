@@ -4,3 +4,5 @@ import { verifyEmail } from '../controllers/VerificationController';
 const router = Router();
 
 router.get('/verify-email/:token', verifyEmail);
+
+export default router;

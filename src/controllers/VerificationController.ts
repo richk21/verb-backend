@@ -33,7 +33,8 @@ export const verifyEmail = async (req: Request, res: Response) => {
       html: signUpMailTemplate(user.userName),
     });
 
-    res.redirect(`${process.env.CLIENT_URL}/login?verified=true`);
+    // Redirect back to frontend login with a query param to show success state.
+    res.redirect(`${process.env.FRONTEND_URL || process.env.CLIENT_URL}/login?verified=true`);
   } catch (error) {
     res.status(500).json({ message: 'Verification failed' });
   }

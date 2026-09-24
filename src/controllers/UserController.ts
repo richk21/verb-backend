@@ -58,7 +58,9 @@ export const createUser = async (req: Request, res: Response) => {
 
     await newUser.save();
 
-    const verificationUrl = `${process.env.FRONTEND_URL}/users/verify-email/${verificationToken}`;
+    // Send a link that points to the backend verification endpoint so clicking the
+    // email verifies the token server-side and then redirects to the frontend.
+    const verificationUrl = `${process.env.BACKEND_URL || ''}/api/verify-email/${verificationToken}`;
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     //send email notification

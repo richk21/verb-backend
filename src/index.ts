@@ -9,6 +9,7 @@ import notificationRoutes from './routes/notificationRoutes';
 import reportRoutes from './routes/reportRoutes';
 import unsplashRoutes from './routes/unsplashRoutes';
 import userRoutes from './routes/userRoutes';
+import verificationRoute from './routes/verificationRoute';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/unsplash', unsplashRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api', verificationRoute);
 
 const PORT = process.env.PORT;
 
